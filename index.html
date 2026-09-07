@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>毕业以后，你想往哪里走？</title>
+<style>
+/* --- 秀米/木疙瘩/易企秀式 H5 全屏重置 --- */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  background: #080808;
+  color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%; height: 100%;
+  position: relative;
+  touch-action: none;
+}
+
+.screen-container {
+  width: 100%; height: 100%;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.screen {
+  width: 100vw; height: 100vh;
+  position: relative;
+  padding: 6vh 6vw 8vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.center { align-items: center; text-align: center; }
+
+/* 极简天渠风格标签与文本 */
+.k {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: #777;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+h1 { font-size: clamp(28px, 8vw, 48px); line-height: 1.15; margin: 0 0 16px; font-weight: 800; }
+h2 { font-size: clamp(22px, 6vw, 36px); line-height: 1.3; margin: 0 0 16px; font-weight: 700; }
+p { font-size: 14px; line-height: 1.8; color: #c7c7c7; margin: 0 0 14px; }
+
+/* H5 标准上滑指示器 */
+.swipe-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 1px;
+  animation: bounce 1.8s infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+.swipe-arrow {
+  width: 10px; height: 10px;
+  border-left: 1.5px solid #888;
+  border-top: 1.5px solid #888;
+  transform: rotate(45deg);
+}
+@keyframes bounce {
+  0%, 100% { transform: translate(-50%, 0); opacity: 0.4; }
+  50% { transform: translate(-50%, -6px); opacity: 0.9; }
+}
+
+/* 按钮 */
+.btn {
+  border: 1px solid #eee;
+  background: #eee;
+  color: #111;
+  border-radius: 999px;
+  padding: 12px 26px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: transform 0.2s, background 0.2s;
+  box-shadow: 0 8px 24px rgba(255,255,255,0.08);
+}
+.btn:active { transform: scale(0.95); }
+.btn.dark { background: none; color: #eee; border-color: #444; }
+
+/* 问卷样式 */
+.quiz { display: grid; gap: 10px; width: 100%; margin-top: 10px; }
+.choice {
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 14px;
+  background: #101010;
+  color: #eee;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.choice.selected { background: #eee; color: #111; border-color: #eee; font-weight: 700; }
+
+.hero-statement {
+  font-size: clamp(30px, 8.5vw, 48px);
+  font-weight: 900;
+  line-height: 1.35;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+/* --- 第一页：展示读者之前留下的纸条飞机卡片 --- */
+.user-saved-tag {
+  background: linear-gradient(135deg, #252528, #18181b);
+  border: 1px solid #ff5e36;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  max-width: 300px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 94, 54, 0.15);
+  animation: pulseGlow 2.5s infinite alternate;
+}
+@keyframes pulseGlow {
+  0% { border-color: rgba(255, 94, 54, 0.4); box-shadow: 0 4px 12px rgba(255, 94, 54, 0.1); }
+  100% { border-color: rgba(255, 94, 54, 0.9); box-shadow: 0 8px 24px rgba(255, 94, 54, 0.3); }
+}
+.user-saved-tag .tag-title {
+  font-size: 11px;
+  color: #ff5e36;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.user-saved-tag p {
+  font-size: 12px;
+  color: #eee;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- 飘落纸条互动区（多纸条密集分布） --- */
+.notes-container {
+  position: relative;
+  width: 100%;
+  height: 450px;
+  margin-top: 5px;
+  perspective: 1000px;
+}
+
+.paper-item {
+  position: absolute;
+  width: 120px;
+  padding: 10px 8px;
+  border-radius: 4px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+  cursor: pointer;
+  font-size: 10.5px;
+  line-height: 1.4;
+  font-weight: 600;
+  opacity: 0;
+  transform-style: preserve-3d;
+  z-index: 5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.paper-item::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  pointer-events: none;
+}
+
+/* 8张纸条 + 1张纸飞机写字块 飘落停靠动画 */
+.screen.active .paper-item.p1 {
+  background: #fdfbf7; color: #111; left: 2%; top: 10px;
+  animation: dropAndStay1 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+.screen.active .paper-item.p2 {
+  background: #1e1e22; color: #eee; border: 1px solid #444; right: 2%; top: 20px;
+  animation: dropAndStay2 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+.screen.active .paper-item.p3 {
+  background: #f4f4f4; color: #111; left: 34%; top: 85px;
+  animation: dropAndStay3 2.0s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards;
+}
+.screen.active .paper-item.p4 {
+  background: #25252b; color: #ddd; border: 1px solid #555; left: 4%; top: 160px;
+  animation: dropAndStay4 2.2s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+}
+.screen.active .paper-item.p5 {
+  background: #fdfbf7; color: #111; right: 4%; top: 150px;
+  animation: dropAndStay5 2.3s cubic-bezier(0.22, 1, 0.36, 1) 0.65s forwards;
+}
+.screen.active .paper-item.p6 {
+  background: #ecece6; color: #222; left: 32%; top: 235px;
+  animation: dropAndStay6 2.4s cubic-bezier(0.22, 1, 0.36, 1) 0.8s forwards;
+}
+.screen.active .paper-item.p7 {
+  background: #1c1c20; color: #ccc; border: 1px solid #444; left: 2%; top: 310px;
+  animation: dropAndStay7 2.5s cubic-bezier(0.22, 1, 0.36, 1) 0.95s forwards;
+}
+.screen.active .paper-item.p8 {
+  background: #fbf9f4; color: #111; right: 2%; top: 300px;
+  animation: dropAndStay8 2.6s cubic-bezier(0.22, 1, 0.36, 1) 1.1s forwards;
+}
+.screen.active .paper-item.p-write {
+  background: #eee; color: #111; left: 20%; top: 380px; width: 180px;
+  border: 1.5px dashed #ff5e36;
+  animation: dropAndStayWrite 2.7s cubic-bezier(0.22, 1, 0.36, 1) 1.25s forwards;
+}
+
+@keyframes dropAndStay1 { 0%{ transform: translateY(-220px) rotate(-15deg); opacity: 0; } 100%{ transform: translateY(0) rotate(-6deg); opacity: 1; } }
+@keyframes dropAndStay2 { 0%{ transform: translateY(-220px) rotate(20deg); opacity: 0; } 100%{ transform: translateY(0) rotate(8deg); opacity: 1; } }
+@keyframes dropAndStay3 { 0%{ transform: translateY(-220px) rotate(-10deg); opacity: 0; } 100%{ transform: translateY(0) rotate(-2deg); opacity: 1; } }
+@keyframes dropAndStay4 { 0%{ transform: translateY(-220px) rotate(15deg); opacity: 0; } 100%{ transform: translateY(0) rotate(5deg); opacity: 1; } }
+@keyframes dropAndStay5 { 0%{ transform: translateY(-220px) rotate(-18deg); opacity: 0; } 100%{ transform: translateY(0) rotate(-7deg); opacity: 1; } }
+@keyframes dropAndStay6 { 0%{ transform: translateY(-220px) rotate(12deg); opacity: 0; } 100%{ transform: translateY(0) rotate(3deg); opacity: 1; } }
+@keyframes dropAndStay7 { 0%{ transform: translateY(-220px) rotate(-14deg); opacity: 0; } 100%{ transform: translateY(0) rotate(-5deg); opacity: 1; } }
+@keyframes dropAndStay8 { 0%{ transform: translateY(-220px) rotate(16deg); opacity: 0; } 100%{ transform: translateY(0) rotate(6deg); opacity: 1; } }
+@keyframes dropAndStayWrite { 0%{ transform: translateY(-220px) rotate(10deg); opacity: 0; } 100%{ transform: translateY(0) rotate(2deg); opacity: 1; } }
+
+/* --- 纸飞机折叠飞走动画元素 --- */
+.plane-fly-anim {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  margin-top: -30px;
+  margin-left: -30px;
+  z-index: 300;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: center center;
+}
+.plane-fly-anim.active {
+  animation: flyToTopPage 2.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes flyToTopPage {
+  0% {
+    transform: translate(0, 80px) scale(0.2) rotate(10deg);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(0, 0) scale(1.2) rotate(-15deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(80px, -150px) scale(1) rotate(-30deg);
+    opacity: 1;
+  }
+  80% {
+    transform: translate(-120px, -400px) scale(0.6) rotate(-45deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(200px, -800px) scale(0.1) rotate(-60deg);
+    opacity: 0;
+  }
+}
+
+/* --- 3D 纸条展开 Modal --- */
+.unfold-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  perspective: 1200px;
+}
+.unfold-modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+.paper-unfold-card {
+  width: 100%;
+  max-width: 320px;
+  background: #fdfbf7;
+  color: #111;
+  border-radius: 6px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.9);
+  padding: 24px;
+  position: relative;
+  transform-origin: top center;
+  transform: rotateX(-90deg) scale(0.8);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.unfold-modal-overlay.active .paper-unfold-card {
+  transform: rotateX(0deg) scale(1);
+}
+
+.paper-unfold-card p { font-size: 14px; color: #222; line-height: 1.8; margin: 0; }
+.paper-unfold-card textarea {
+  width: 100%; height: 110px; background: #fff; border: 1px solid #ccc;
+  border-radius: 6px; color: #111; padding: 10px; font-size: 13px; margin: 12px 0; outline: none;
+}
+
+/* --- 图表与路线样式 --- */
+.route { height: 180px; position: relative; margin: 28px 0; width: 100%; }
+.line { position: absolute; left: 8%; right: 8%; top: 50%; height: 1px; background: #333; }
+.ball { position: absolute; left: 8%; top: 50%; width: 10px; height: 10px; border-radius: 50%; background: #fff; transform: translate(-50%,-50%); transition: left 1.8s ease-in-out; }
+.node { position: absolute; top: 50%; width: 16px; height: 16px; border: 1px solid #666; background: #080808; border-radius: 50%; transform: translate(-50%,-50%); }
+.n1{left:8%} .n2{left:28%} .n3{left:50%} .n4{left:72%} .n5{left:92%}
+.lab { position: absolute; top: 60%; font-size: 11px; color: #777; transform: translateX(-50%); }
+.l1{left:8%} .l2{left:28%} .l3{left:50%} .l4{left:72%} .l5{left:92%}
+
+.big { font-size: 72px; font-weight: 900; letter-spacing: -.05em; color: #fff; }
+.bar { height: 8px; background: #222; border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.fill { width: 0; height: 100%; background: #eee; transition: width 1.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; width: 100%; }
+.card { border: 1px solid #222; border-radius: 14px; padding: 16px 12px; background: #101010; text-align: center; }
+.num { font-size: 26px; font-weight: 900; }
+.ct { font-size: 11px; color: #777; margin-top: 6px; }
+
+.circle-box { position: relative; width: 190px; height: 190px; margin: 20px auto; }
+.circle-box svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.circle-bg { fill: none; stroke: #222; stroke-width: 14; }
+.circle-fill {
+  fill: none; stroke: #eee; stroke-width: 14;
+  stroke-dasharray: 502; stroke-dashoffset: 502;
+  transition: stroke-dashoffset 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+  stroke-linecap: round;
+}
+.circle-inner {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.data-rows { margin: 20px 0; width: 100%; }
+.row { margin: 20px 0; }
+.rowhead { display: flex; justify-content: space-between; font-size: 13px; color: #aaa; margin-bottom: 6px; }
+
+.axis { height: 170px; border-left: 1px solid #444; border-bottom: 1px solid #444; margin: 25px 10px; position: relative; width: calc(100% - 20px); }
+.axis-line {
+  position: absolute; left: 8%; bottom: 20%; width: 0; height: 1px; background: #eee;
+  transform: rotate(-18deg); transform-origin: left; transition: width 1.2s ease-out;
+}
+.pt {
+  position: absolute; width: 10px; height: 10px; background: #eee; border-radius: 50%;
+  transform: scale(0); transition: transform 0.4s ease-out;
+}
+.p1{left:8%;bottom:20%} .p2{left:38%;bottom:42%} .p3{left:68%;bottom:64%} .p4{left:90%;bottom:78%}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="screen-container" id="container">
+
+    <!-- 00: 首页 (包含已留下纸条展示) -->
+    <section class="screen center active">
+      <!-- 读者上次写的纸条卡片（默认隐藏，写完折飞机后显示） -->
+      <div id="firstPageSavedTag" class="user-saved-tag" style="display: none;" onclick="showUnfoldModal('modUserSaved')">
+        <div class="tag-title">✈️ 你之前留下的选择纸条 (点击展开)</div>
+        <p id="savedTagPreview">“点击查看你留下的文字…”</p>
+      </div>
+
+      <div class="k">A SMALL TEST ABOUT WORK</div>
+      <h1>毕业以后，<br>你想往哪里走？</h1>
+      <p>没有标准答案。<br>先从几个关于“工作”的问题开始。</p>
+      <div class="swipe-hint"><span>向上滑动开始</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 01: 问卷 Q1 -->
+    <section class="screen center">
+      <div class="k">01 / 05</div>
+      <h2>如果明天就要毕业，<br>你最想先得到什么？</h2>
+      <div class="quiz">
+        <div class="choice" onclick="pick(this)">一份稳定、可预期的工作</div>
+        <div class="choice" onclick="pick(this)">一份和专业相关的工作</div>
+        <div class="choice" onclick="pick(this)">一份能快速成长的工作</div>
+        <div class="choice" onclick="pick(this)">先工作，边走边看</div>
+      </div>
+      <div class="swipe-hint"><span>上滑继续</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 02: 问卷 Q2 -->
+    <section class="screen center">
+      <div class="k">02 / 05</div>
+      <h2>如果一份工作不如想象中理想，<br>你会怎么办？</h2>
+      <div class="quiz">
+        <div class="choice" onclick="pick(this)">坚持一段时间，再判断</div>
+        <div class="choice" onclick="pick(this)">换一个行业试试</div>
+        <div class="choice" onclick="pick(this)">先保证收入和生活</div>
+        <div class="choice" onclick="pick(this)">回到原来的方向</div>
+      </div>
+      <div class="swipe-hint"><span>上滑继续</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 03: 问卷 Q3 -->
+    <section class="screen center">
+      <div class="k">03 / 05</div>
+      <h2>你更害怕哪一种？</h2>
+      <div class="quiz">
+        <div class="choice" onclick="pick(this)">选错第一份工作</div>
+        <div class="choice" onclick="pick(this)">几年后发现自己没有积累</div>
+        <div class="choice" onclick="pick(this)">收入一直达不到预期</div>
+        <div class="choice" onclick="pick(this)">别人都在往前走，而我停下来了</div>
+      </div>
+      <div class="swipe-hint"><span>上滑继续</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 04: 问卷 Q4 -->
+    <section class="screen center">
+      <div class="k">04 / 05</div>
+      <h2>你愿意为了“可能更适合”<br>重新开始吗？</h2>
+      <div class="quiz">
+        <div class="choice" onclick="pick(this)">愿意，试错本身就是积累</div>
+        <div class="choice" onclick="pick(this)">看成本，不能一直试</div>
+        <div class="choice" onclick="pick(this)">不太愿意，稳定更重要</div>
+        <div class="choice" onclick="pick(this)">我还不知道</div>
+      </div>
+      <div class="swipe-hint"><span>上滑继续</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 05: 问卷 Q5 -->
+    <section class="screen center">
+      <div class="k">05 / 05</div>
+      <h2>如果没有人告诉你“应该怎样”，<br>你会怎么选？</h2>
+      <div class="quiz">
+        <div class="choice" onclick="pick(this)">按照兴趣</div>
+        <div class="choice" onclick="pick(this)">按照现实</div>
+        <div class="choice" onclick="pick(this)">按照能力</div>
+        <div class="choice" onclick="pick(this)">边走边调整</div>
+      </div>
+      <div class="swipe-hint"><span>上滑解锁结论</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 06: 独立标语页 -->
+    <section class="screen center">
+      <div class="k">STATEMENT</div>
+      <div class="hero-statement">
+        你的选择<br>不需要被判定。
+      </div>
+      <div class="swipe-hint" style="margin-top: 30px;"><span>上滑查看大家的纸条</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 07: 纸条互动页（增加至8张匿名现实纸条 + 1张纸飞机交互纸条） -->
+    <section class="screen center" id="pageNotes">
+      <div class="k">CHOICES OF OTHERS</div>
+      <h2>查看别人现实的选择</h2>
+      <p style="font-size: 12px; color: #888; margin-bottom: 2px;">点击触碰飘落的纸条，顺着折痕展开</p>
+
+      <div class="notes-container">
+        <!-- 纸条 1 -->
+        <div class="paper-item p1" onclick="showUnfoldModal('mod1')">
+          “学了四年视觉传达，毕业第一份工作去了西部计划做基层宣文……”
+        </div>
+
+        <!-- 纸条 2 -->
+        <div class="paper-item p2" onclick="showUnfoldModal('mod2')">
+          “后来去职高当了美术老师，发现教学和商业设计完全是两回事……”
+        </div>
+
+        <!-- 纸条 3 -->
+        <div class="paper-item p3" onclick="showUnfoldModal('mod3')">
+          “在培训机构教书的那段时间，每天沟通积累了意想不到的耐性……”
+        </div>
+
+        <!-- 纸条 4 -->
+        <div class="paper-item p4" onclick="showUnfoldModal('mod4')">
+          “现在在建筑公司做合同专员，审美的细致在合同和表格排版上派上了用场。”
+        </div>
+
+        <!-- 纸条 5 -->
+        <div class="paper-item p5" onclick="showUnfoldModal('mod5')">
+          “回老家考了两次事业单位，第二次才上岸，过程很熬人，但终于安定了。”
+        </div>
+
+        <!-- 纸条 6 -->
+        <div class="paper-item p6" onclick="showUnfoldModal('mod6')">
+          “第一份工作三个月就离职了，当时觉得自己很失败，现在看其实只是不适合。”
+        </div>
+
+        <!-- 纸条 7 -->
+        <div class="paper-item p7" onclick="showUnfoldModal('mod7')">
+          “跨界尝试做自媒体，虽然收入不稳定，但拥有了完全自主的时间。”
+        </div>
+
+        <!-- 纸条 8 -->
+        <div class="paper-item p8" onclick="showUnfoldModal('mod8')">
+          “只要事情已经发生了，就不算沉没成本。每一次尝试都不是废稿。”
+        </div>
+
+        <!-- 空白自定义纸条 (折成纸飞机) -->
+        <div class="paper-item p-write" onclick="showUnfoldModal('modWrite')">
+          ✈️ 写下你的选择，折成纸飞机飞走…
+        </div>
+      </div>
+
+      <div class="swipe-hint"><span>上滑进入数据探索</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 08: 非线性路线 -->
+    <section class="screen">
+      <div class="k">从一个人的选择，走向更多人的选择</div>
+      <h2>毕业以后，<br>路并不是只有一条。</h2>
+      <p>有人继续读书，有人考公考编，有人直接进入职场，也有人进入自由职业、创业和各种新业态。</p>
+      
+      <div class="route">
+        <div class="line"></div>
+        <div class="ball" id="routeBall"></div>
+        <i class="node n1"></i><i class="node n2"></i><i class="node n3"></i><i class="node n4"></i><i class="node n5"></i>
+        <span class="lab l1">毕业</span><span class="lab l2">深造</span><span class="lab l3">就业</span><span class="lab l4">转行</span><span class="lab l5">再选择</span>
+      </div>
+      
+      <p style="font-size: 12px; color: #666; margin-top: 20px;">数据不是答案，它只是告诉我们：很多人的路，本来就不是直线。</p>
+      <div class="swipe-hint"><span>上滑继续</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 09: DATA 01 深造 -->
+    <section class="screen">
+      <div class="k">DATA 01 · 去向</div>
+      <h2>选择继续深造的人，<br>也没有想象中那么少。</h2>
+      <div>
+        <div class="big">21.5%</div>
+        <p>本科毕业生的深造比例。</p>
+        <div class="bar"><div class="fill" data-w="21.5%"></div></div>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="num">18.4%</div><div class="ct">境内读研比例</div></div>
+        <div class="card"><div class="num">2.0%</div><div class="ct">留学比例</div></div>
+      </div>
+      <div class="swipe-hint"><span>上滑查看下一个数据</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 10: DATA 02 稳定与自由 -->
+    <section class="screen">
+      <div class="k">DATA 02 · 稳定与自由</div>
+      <h2>有人把“稳定”当作答案，<br>也有人把“自由”当作答案。</h2>
+      <div class="data-rows">
+        <div class="row">
+          <div class="rowhead"><span>考公 / 考编首选意向</span><b>22.86%</b></div>
+          <div class="bar"><div class="fill" data-w="22.86%"></div></div>
+        </div>
+        <div class="row">
+          <div class="rowhead"><span>灵活就业与新业态</span><b>19.8%</b></div>
+          <div class="bar"><div class="fill" data-w="19.8%"></div></div>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: #888; margin-top: 20px;">追求稳定与探索未知并不是对立面，许多人在两者之间寻找着动态平衡。</p>
+      <div class="swipe-hint"><span>上滑继续</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 11: DATA 03 专业与工作 -->
+    <section class="screen center">
+      <div class="k">DATA 03 · 专业与工作</div>
+      <h2>学了什么，<br>不一定决定最后做什么。</h2>
+      
+      <div class="circle-box">
+        <svg viewBox="0 0 180 180">
+          <circle class="circle-bg" cx="90" cy="90" r="80" />
+          <circle class="circle-fill" id="ringCircle" cx="90" cy="90" r="80" />
+        </svg>
+        <div class="circle-inner">
+          <span style="font-size: 38px; font-weight: 900;">32%</span>
+          <span style="font-size: 11px; color: #888;">跨专业 / 非对口就业</span>
+        </div>
+      </div>
+
+      <p style="font-size: 14px; text-align: center; max-width: 320px;">
+        近三分之一的人从事的工作与专业非直接相关。“非对口”不再意味着偏航，专业正回归为基础能力训练。
+      </p>
+      <div class="swipe-hint"><span>上滑继续</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 12: DATA 04 职业流动 -->
+    <section class="screen">
+      <div class="k">DATA 04 · 职业流动</div>
+      <h2>第一份工作，<br>也不是人生终稿。</h2>
+      
+      <div class="axis" id="axisArea">
+        <div class="axis-line" id="axisLine"></div>
+        <i class="pt p1"></i><i class="pt p2"></i><i class="pt p3"></i><i class="pt p4"></i>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="num">24.5%</div><div class="ct">半年内离职率</div></div>
+        <div class="card"><div class="num">1.8 次</div><div class="ct">3年内平均换岗</div></div>
+      </div>
+      <p style="font-size: 12px; color: #777; margin-top: 14px;">及时止损与适度试错，是寻找职业自洽的必经过程。</p>
+      <div class="swipe-hint"><span>上滑查看尾页</span><div class="swipe-arrow"></div></div>
+    </section>
+
+    <!-- 13: 尾页 -->
+    <section class="screen center">
+      <div class="k">THE QUESTION RETURNS</div>
+      <h2 style="font-size: 24px; line-height: 1.5;">“如果职业可以重新选择，<br>你还会选择现在的自己吗？”</h2>
+      <p style="margin: 18px 0;">也许我们真正需要确定的，<br>不是一条永远正确的路，<br>而是下一步想往哪里走。</p>
+      <button class="btn dark" onclick="scrollToPage(0)">重新开始探索</button>
+    </section>
+
+  </div>
+</div>
+
+<!-- 飞行的纸飞机 SVG 动画节点 -->
+<div class="plane-fly-anim" id="flyingPlane">
+  <svg viewBox="0 0 24 24" fill="#ffffff" width="60" height="60" style="filter: drop-shadow(0 8px 16px rgba(255,94,54,0.4));">
+    <path d="M1.946 9.315c-.522-.174-.527-.455.01-.634L21.044 2.32c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l-6 5v-4.5l8.5-7.5-10.5 4.5-2.054-.685z"/>
+  </svg>
+</div>
+
+<!-- 弹窗列表 Modal -->
+<div class="unfold-modal-overlay" id="mod1">
+  <div class="paper-unfold-card">
+    <p>“学了四年视觉传达设计，毕业第一份工作去了西部计划做基层宣文。当时很多人不理解，但那一年让我真正看到了不同人群的生活状态。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod1')">合上纸条</button>
+  </div>
+</div>
+
+<div class="unfold-modal-overlay" id="mod2">
+  <div class="paper-unfold-card">
+    <p>“后来去职高当了美术老师，发现教学和商业设计完全是两回事。教学生画画需要极大的耐心，这也重塑了我的性格。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod2')">合上纸条</button>
+  </div>
+</div>
+
+<div class="unfold-modal-overlay" id="mod3">
+  <div class="paper-unfold-card">
+    <p>“在培训机构教书的那段时间，每天都在和家长沟通，积累了意想不到的耐性和沟通技巧。每一次经历其实都有它的意义。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod3')">合上纸条</button>
+  </div>
+</div>
+
+<div class="unfold-modal-overlay" id="mod4">
+  <div class="paper-unfold-card">
+    <p>“现在在建筑公司做合同专员，做事情的能力其实是通用的。以前做设计培养的审美细致、基层的公文排版、沟通的果断，都在新岗位派上了用场。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod4')">合上纸条</button>
+  </div>
+</div>
+
+<div class="unfold-modal-overlay" id="mod5">
+  <div class="paper-unfold-card">
+    <p>“回老家考了两次事业单位，第二次才成功上岸。备考的那半年压力极大，但最终拿到录取通知时，心里终于踏实了下来。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod5')">合上纸条</button>
+  </div>
+</div>
+
+<div class="unfold-modal-overlay" id="mod6">
+  <div class="paper-unfold-card">
+    <p>“第一份工作三个月就离职了，当时觉得自己特别失败。后来换到了现在的岗位，才发现只是之前的环境和自己性格不合，不盲目硬撑也是一种解脱。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod6')">合上纸条</button>
+  </div>
+</div>
+
+<div class="unfold-modal-overlay" id="mod7">
+  <div class="paper-unfold-card">
+    <p>“跨界尝试做个人自媒体，刚开始连续几个月颗粒无收，但慢慢摸索出了方向。虽然收入不如上班稳定，但拥有了完全自由掌控的时间。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod7')">合上纸条</button>
+  </div>
+</div>
+
+<div class="unfold-modal-overlay" id="mod8">
+  <div class="paper-unfold-card">
+    <p>“我觉得只要事情已经发生了，就不算沉没成本。每一个走过的弯路，都在为未来的某个契机做铺垫，每一次尝试都不是废稿。”</p>
+    <button class="btn" style="width: 100%; margin-top: 15px;" onclick="hideUnfoldModal('mod8')">合上纸条</button>
+  </div>
+</div>
+
+<!-- 读者填写纸条 Modal -->
+<div class="unfold-modal-overlay" id="modWrite">
+  <div class="paper-unfold-card">
+    <p style="font-weight: bold; margin-bottom: 8px;">写下你的选择与话语 ✏️</p>
+    <textarea id="userInput" placeholder="写下你对未来的选择，或者想对未来的自己说的话..."></textarea>
+    <button class="btn" style="width: 100%; margin-top: 10px;" onclick="foldAndFlyAirplane()">折成纸飞机投递 ✈️</button>
+  </div>
+</div>
+
+<!-- 查看读者自己留下的纸条 Modal -->
+<div class="unfold-modal-overlay" id="modUserSaved">
+  <div class="paper-unfold-card" style="background: #1e1e22; color: #fff; border: 1px solid #ff5e36;">
+    <p style="font-weight: bold; color: #ff5e36; margin-bottom: 8px;">✈️ 你之前飞出的纸条：</p>
+    <p id="savedFullContent" style="color: #eee; font-size: 14px; line-height: 1.8;"></p>
+    <button class="btn" style="width: 100%; margin-top: 18px; background: #ff5e36; color: #fff; border: none;" onclick="hideUnfoldModal('modUserSaved')">合上纸条，再次探索</button>
+  </div>
+</div>
+
+<script>
+const container = document.getElementById('container');
+const screens = document.querySelectorAll('.screen');
+let pageIndex = 0;
+const totalPages = screens.length;
+let userSavedText = "";
+
+function scrollToPage(idx) {
+  if (idx < 0 || idx >= totalPages) return;
+  
+  screens.forEach((s, i) => {
+    if (i === idx) s.classList.add('active');
+    else s.classList.remove('active');
+  });
+
+  pageIndex = idx;
+  container.style.transform = `translateY(-${pageIndex * 100}vh)`;
+  triggerPageAnimation(pageIndex);
+}
+
+function pick(el) {
+  const siblings = el.parentNode.querySelectorAll('.choice');
+  siblings.forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function showUnfoldModal(id) { 
+  document.getElementById(id).classList.add('active'); 
+}
+function hideUnfoldModal(id) { 
+  document.getElementById(id).classList.remove('active'); 
+}
+
+/* 折叠并飞出纸飞机效果 */
+function foldAndFlyAirplane() {
+  const txt = document.getElementById('userInput').value.trim();
+  if (!txt) {
+    alert("请输入内容后再投递哦");
+    return;
+  }
+
+  userSavedText = txt;
+  
+  // 1. 关闭输入弹窗
+  hideUnfoldModal('modWrite');
+
+  // 2. 触发纸飞机飞向第一页的动画
+  const plane = document.getElementById('flyingPlane');
+  plane.classList.remove('active');
+  void plane.offsetWidth; // 触发 reflow 重置动画
+  plane.classList.add('active');
+
+  // 3. 更新首页(第一页)的纸条卡片
+  document.getElementById('savedTagPreview').innerText = `“${userSavedText}”`;
+  document.getElementById('savedFullContent').innerText = userSavedText;
+  document.getElementById('firstPageSavedTag').style.display = 'block';
+
+  // 4. 替换纸条互动页上“写纸条”原本的样式
+  const writeBtn = document.querySelector('.paper-item.p-write');
+  if (writeBtn) {
+    writeBtn.innerHTML = "✈️ 已投递你的纸条<br><span style='font-size:9px;color:#ff5e36;'>(已飞往首页)</span>";
+  }
+}
+
+function triggerPageAnimation(idx) {
+  if (idx === 8) {
+    const ball = document.getElementById('routeBall');
+    ball.style.left = '8%';
+    setTimeout(() => { ball.style.left = '92%'; }, 200);
+  }
+
+  const activeScreen = screens[idx];
+  const fills = activeScreen.querySelectorAll('.fill');
+  fills.forEach(f => {
+    f.style.width = '0';
+    setTimeout(() => { f.style.width = f.dataset.w; }, 150);
+  });
+
+  if (idx === 11) {
+    const ring = document.getElementById('ringCircle');
+    ring.style.strokeDashoffset = '502';
+    setTimeout(() => { ring.style.strokeDashoffset = '341'; }, 200);
+  }
+
+  if (idx === 12) {
+    const axisLine = document.getElementById('axisLine');
+    const pts = activeScreen.querySelectorAll('.pt');
+    axisLine.style.width = '0%';
+    pts.forEach(p => p.style.transform = 'scale(0)');
+    
+    setTimeout(() => { axisLine.style.width = '88%'; }, 200);
+    pts.forEach((p, i) => {
+      setTimeout(() => { p.style.transform = 'scale(1)'; }, 300 + i * 200);
+    });
+  }
+}
+
+// 手势识别与滑动
+let touchStartY = 0;
+let touchEndY = 0;
+
+document.addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  touchEndY = e.changedTouches[0].clientY;
+  handleSwipe();
+}, { passive: true });
+
+function handleSwipe() {
+  const dy = touchStartY - touchEndY;
+  if (Math.abs(dy) > 45) {
+    if (dy > 0) scrollToPage(pageIndex + 1);
+    else scrollToPage(pageIndex - 1);
+  }
+}
+
+let isWheeling = false;
+document.addEventListener('wheel', e => {
+  if (isWheeling) return;
+  isWheeling = true;
+  if (e.deltaY > 0) scrollToPage(pageIndex + 1);
+  else scrollToPage(pageIndex - 1);
+  setTimeout(() => { isWheeling = false; }, 800);
+}, { passive: true });
+</script>
+
+</body>
+</html>
